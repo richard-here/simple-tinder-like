@@ -1,9 +1,6 @@
+import { ServiceException } from '~/errors'
 import { Request, Response, NextFunction } from 'express'
-import { ServiceException } from '../errors'
 
-/**
- * Middleware to handle errors.
- */
 async function errorHandler(
   err: Error, 
   _req: Request, 

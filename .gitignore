@@ -244,3 +244,5 @@ $RECYCLE.BIN/
 .pnp.*
 
 # End of https://www.toptal.com/developers/gitignore/api/node,firebase,yarn,linux,windows,macos
+
+lib/

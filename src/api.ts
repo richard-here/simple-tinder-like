@@ -1,7 +1,7 @@
 import express from 'express'
 import cors from 'cors'
-
 import { errorHandler, notFoundHandler } from '~/middlewares'
+import routes from '~/routes'
 
 const app = express()
 
@@ -11,7 +11,6 @@ app.use(cors({ origin: true }))
 // Set default transfer data type to JSON
 app.use(express.json())
 
-const routes = null
 // Define routes
 app.use('/', routes)
 

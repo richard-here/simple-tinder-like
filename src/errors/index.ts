@@ -1,4 +1,3 @@
-import { logger } from 'firebase-functions/v1'
 import invariant from 'tiny-invariant'
 
 const ERROR_TYPE = ['server', 'user', 'not-found', 'permission'] as const

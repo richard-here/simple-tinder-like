@@ -2,8 +2,17 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "~/*": ["src/*"]
+      "~/*": ["src/*"]                  // Retain the alias paths for module resolution
     },
-    "esModuleInterop": true
+    "esModuleInterop": true,            // Ensures compatibility with CommonJS modules
+    "module": "ESNext",                 // Ensures TypeScript generates ES modules (for 'import' / 'export')
+    "target": "ES2020",                 // Set the target ECMAScript version
+    "moduleResolution": "Node",         // Ensure proper module resolution
+    "allowSyntheticDefaultImports": true, // Allow default imports from modules without a default export
+    "outDir": "lib",                  // Output directory for compiled files
+    "rootDir": "./src",                 // Root directory for your source files
+    "strict": true,                       // Enable strict type checking
   },
+  "include": ["src/**/*.ts"],            // Include all TypeScript files in the 'src' folder
+  "exclude": ["node_modules"]            // Exclude 'node_modules' from compilation
 }
