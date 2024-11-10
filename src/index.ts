@@ -1,6 +1,7 @@
 import admin from 'firebase-admin'
 import app from '~/api'
 import ENV from '~/configs/dotenv'
+import { initializeDB } from './db'
 
 
 admin.initializeApp({
@@ -12,6 +13,8 @@ admin.initializeApp({
 })
 
 const PORT = 3000
+
+await initializeDB()
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`)

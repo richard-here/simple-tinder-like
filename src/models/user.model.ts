@@ -1,10 +1,23 @@
 import mongoose from 'mongoose'
 import { Schema } from 'mongoose'
+import { USER } from '~/constants/user.constants'
 
 const UserSchema = new Schema(
   {
     email: { type: String, required: true, unique: true },
-    name: { type: String, required: false, default: null }
+    name: { type: String, required: false, default: null },
+    authId: { type: String, required: true, unique: true },
+    interests: { type: [String], required: false, default: [] },
+    profileSummary: { type: String, required: false, default: null },
+    scores: {
+      type: Map,
+      of: Number,
+      required: false,
+      default: USER.CATEGORIZED_INTERESTS.reduce((acc, ci) => {
+        acc[ci.category] = 0
+        return acc
+      }, {} as { [key: string]: number })
+    }
   },
   {
     timestamps: true,
