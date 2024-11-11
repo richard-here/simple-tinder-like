@@ -251,6 +251,10 @@ class MatchService {
         ? MATCH.STATUS.DECLINED
         : MATCH.STATUS.PENDING
 
+    if (match.overallStatus === MATCH.STATUS.ACCEPTED) {
+      match.matchAt = new Date()
+    }
+
     await match.save()
 
     await this.matchLogModel.create({
@@ -260,6 +264,18 @@ class MatchService {
     })
 
     return match
+  }
+
+  getAcceptedMatches = async ({ userId }: { userId: string }) => {
+    const acceptedMatches = await this.matchModel.find({
+      $or: [
+        { userIdOne: userId },
+        { userIdTwo: userId }
+      ],
+      overallStatus: MATCH.STATUS.ACCEPTED
+    }).populate('userOne').populate('userTwo').sort({ matchAt: -1 })
+
+    return acceptedMatches
   }
 }
 

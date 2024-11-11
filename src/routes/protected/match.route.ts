@@ -10,7 +10,7 @@ const validatePathParams = validateRequest(MatchValidator.pathParamsSchema, 'par
 
 router.get('/potential-matches', catchAsyncErrors(MatchController.getPotentialMatches))
 router.get('/matches/:matchId', validatePathParams, catchAsyncErrors(MatchController.getMatchById))
-router.get('/matches', catchAsyncErrors(MatchController.getMatches))
+router.get('/accepted-matches', catchAsyncErrors(MatchController.getAcceptedMatches))
 router.patch('/matches/:matchId', validatePathParams, validateRequest(MatchValidator.updateMatchBodySchema, 'body'), catchAsyncErrors(MatchController.updateMatch))
 
 export default router

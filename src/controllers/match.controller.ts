@@ -2,8 +2,14 @@ import { Request, Response } from 'express'
 import { authService, matchService } from '~/services'
 
 class MatchController {
-  static async getMatches(req: Request, res: Response) {
-    res.send('getMatches')
+  static async getAcceptedMatches(req: Request, res: Response) {
+    const { user } = req
+    const userId = user?.customClaims?.dbUserId
+    const matches = await matchService.getAcceptedMatches({ userId })
+    res.status(200).send({
+      status: 'success',
+      data: matches
+    })
   }
 
   static async getPotentialMatches(req: Request, res: Response) {
