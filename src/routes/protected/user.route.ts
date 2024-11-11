@@ -6,7 +6,7 @@ import catchAsyncErrors from '~/utils/catchAsyncErrors'
 
 const router = Router()
 
-const validatePathParams = validateRequest(UserValidator.pathParamsSchema)
+const validatePathParams = validateRequest(UserValidator.pathParamsSchema, 'params')
 
 router.get('/me', catchAsyncErrors(UserController.getMyProfile))
 router.get('/:userId', validatePathParams, catchAsyncErrors(UserController.getProfile))

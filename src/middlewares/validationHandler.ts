@@ -5,7 +5,6 @@ const validateRequest =
   (schema: ObjectSchema, property: 'body' | 'query' | 'params' = 'body') =>
   (req: Request, res: Response, next: NextFunction): void => {
     const { error } = schema.validate(req[property])
-
     if (error) {
       res.status(400).send({
         status: 'error',

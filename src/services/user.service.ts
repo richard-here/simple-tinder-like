@@ -31,7 +31,7 @@ class UserService {
   }
 
   getProfile = async ({ userId }: { userId: string }) => {
-    const user = await this.userModel.findById(userId)
+    const user = await this.userModel.findById(userId).select('-scores')
     if (!user) {
       throw new ServiceException({
         type: 'not-found',
@@ -80,7 +80,8 @@ class UserService {
       await user.save()
     }
 
-    return user
+    const { scores, ...updatedUser } = user.toObject()
+    return updatedUser
   }
 }
 
