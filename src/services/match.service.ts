@@ -2,11 +2,19 @@ import { HydratedDocument } from "mongoose"
 import { MATCH } from "~/constants/match.constants"
 import { ServiceException } from "~/errors"
 import Match from "~/models/match.model"
+import MatchLog from "~/models/matchLog.model"
 import User from "~/models/user.model"
 
 class MatchService {
   private matchModel: typeof Match
   private userModel: typeof User
+  private matchLogModel: typeof MatchLog
+
+  constructor({ matchModel, userModel, matchLogModel }: { matchModel: typeof Match, userModel: typeof User, matchLogModel: typeof MatchLog }) {
+    this.matchModel = matchModel
+    this.userModel = userModel
+    this.matchLogModel = matchLogModel
+  }
 
   private createPotentialMatches = async ({ userId, toCreate }: { userId: string, toCreate: number }) => {
     /**
@@ -141,11 +149,6 @@ class MatchService {
     return populatedPotentialMatchesInDb
   }
 
-  constructor({ matchModel, userModel }: { matchModel: typeof Match, userModel: typeof User }) {
-    this.matchModel = matchModel
-    this.userModel = userModel
-  }
-
   getPotentialMatches = async ({ userId }: { userId: string }) => {
     const today = new Date()
     const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
@@ -166,7 +169,7 @@ class MatchService {
     }).populate('userOne').populate('userTwo').limit(10)
 
     if (potentialMatches.length < 10) {
-      return [...potentialMatches, await this.createPotentialMatches({ userId, toCreate: 10 - potentialMatches.length })]
+      return [...potentialMatches, ...(await this.createPotentialMatches({ userId, toCreate: 10 - potentialMatches.length }))]
     } else {
       return potentialMatches
     }
@@ -203,6 +206,22 @@ class MatchService {
       })
     }
 
+    const today = new Date()
+    const todayStart = new Date(today.setUTCHours(0, 0, 0, 0))
+    const todayEnd = new Date(today.setUTCHours(23, 59, 59, 999))
+    const matchLogsToday = await this.matchLogModel.countDocuments({
+      userId,
+      createdAt: { $gte: todayStart, $lte: todayEnd }
+    })
+
+    if (matchLogsToday >= 10) {
+      throw new ServiceException({
+        type: 'user',
+        code: 'services/match/updateMatchById',
+        message: 'User can only swipe 10 times a day'
+      })
+    }
+
     if (match.userIdOne.toString() !== userId && match.userIdTwo.toString() !== userId) {
       throw new ServiceException({
         type: 'permission',
@@ -225,6 +244,13 @@ class MatchService {
         : MATCH.STATUS.PENDING
 
     await match.save()
+
+    await this.matchLogModel.create({
+      userId,
+      matchId,
+      action: status
+    })
+
     return match
   }
 }

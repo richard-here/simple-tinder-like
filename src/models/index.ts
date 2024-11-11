@@ -1,7 +1,9 @@
-const User = require('./user.model')
-const Match = require('./match.model')
+import User from './user.model'
+import Match from './match.model'
+import MatchLog from './matchLog.model'
 
 export default {
   User,
-  Match
+  Match,
+  MatchLog
 }

@@ -34,6 +34,6 @@ MatchSchema.virtual('userTwo', {
   options: { select: 'name profileSummary email interests' }
 })
 
-const User = mongoose.model('Match', MatchSchema)
+const Match = mongoose.model('Match', MatchSchema)
 
-export default User
+export default Match
