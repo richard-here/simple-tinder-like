@@ -8,7 +8,7 @@ class MatchService {
   private matchModel: typeof Match
   private userModel: typeof User
 
-  private createTodayPotentialMatches = async ({ userId }: { userId: string }) => {
+  private createPotentialMatches = async ({ userId, toCreate }: { userId: string, toCreate: number }) => {
     /**
      * Step 1: get 10 other users with scores for each category that are close to the current user's scores
      * Step 2: if there are less than 10 users found, increase the score difference by 10% until 10 users are found
@@ -26,37 +26,45 @@ class MatchService {
       })
     }
 
+    if (!user.gender || !user.matchGenderInterest) {
+      throw new ServiceException({
+        type: 'user',
+        code: 'services/match/createTodayPotentialMatches',
+        message: 'User has not set gender or match gender interest'
+      })
+    }
+
     // Gets a list of potential users based on the user's scores
     const potentialUserIds = new Set<string>()
     for (let [category, score] of user.scores?.entries() ?? []) {
       const filter = {
-        _id: { $ne: userId }
+        _id: { $ne: userId },
+        gender: user.matchGenderInterest,
+        matchGenderInterest: user.gender
       }
 
       let scoreMultiplier = 0.7
       let usersCount = 0
       // Ideally, the score difference is at most 30% less than the user's score
-      // However, if there are less than 10 users found, the score difference is increased by 10% until 10 users are found (or until the score is 0)
-      // There is a chance that the number of users found is less than 10 even if the score difference is 100%
-      while (score * scoreMultiplier > 0 && usersCount < 10) {
+      // However, if there are less than toCreate users found, the score difference is increased by 10% until toCreate users are found (or until the score is 0)
+      // There is a chance that the number of users found is less than toCreate even if the score difference is 100%
+      while (score * scoreMultiplier > 0 && usersCount < toCreate) {
         usersCount = await this.userModel.countDocuments({
           ...filter,
           [`scores.${category}`]: { $gte: score * scoreMultiplier }
         })
 
-        console.log(`scores.${category}: ${score * scoreMultiplier}, userscount: ${usersCount}`)
-
-        if (usersCount < 10) {
+        if (usersCount < toCreate) {
           scoreMultiplier -= 0.1
         }
       }
 
       // Randomizes the offset based on the number of users found
-      const randomizedOffset = Math.floor(Math.random() * Math.max((usersCount - 10), 0))
+      const randomizedOffset = Math.floor(Math.random() * Math.max((usersCount - toCreate), 0))
       const potentialUsers = await this.userModel.find({
         ...filter,
         [`scores.${category}`]: { $gte: score * scoreMultiplier }
-      }).skip(randomizedOffset).limit(10)
+      }).skip(randomizedOffset).limit(toCreate)
 
       for (let potentialUser of potentialUsers) {
         potentialUserIds.add(potentialUser._id.toString())
@@ -77,14 +85,27 @@ class MatchService {
       ]
     })
 
+    // Finds all-time approved matches so that they are not included in the potential matches
+    const approvedMatches = await this.matchModel.find({
+      $or: [
+        { userIdOne: userId },
+        { userIdTwo: userId }
+      ],
+      overallStatus: MATCH.STATUS.ACCEPTED
+    })
+
     const rejectedUsers = rejectedMatches.map((match) => {
+      return match.userIdOne.toString() === userId ? match.userIdTwo.toString(): match.userIdOne.toString()
+    })
+
+    const approvedUsers = approvedMatches.map((match) => {
       return match.userIdOne.toString() === userId ? match.userIdTwo.toString(): match.userIdOne.toString()
     })
 
     // Creates potential matches
     const potentialMatches: { userIdOne: string, userIdTwo: string }[] = []
     potentialUserIds.forEach((potentialUserId) => {
-      if (!rejectedUsers.includes(potentialUserId)) {
+      if (!rejectedUsers.includes(potentialUserId) && !approvedUsers.includes(potentialUserId)) {
         potentialMatches.push({
           userIdOne: userId,
           userIdTwo: potentialUserId
@@ -92,11 +113,11 @@ class MatchService {
       }
     })
 
-    // Chooses 10 random potential matches if there are more than 10 potential matches
+    // Chooses random potential matches if there are more than toCreate potential matches
     const randomizedMatches = []
-    if (potentialMatches.length > 10) {
-      const randomizedOffset = Math.floor(Math.random() * (potentialMatches.length - 10))
-      for (let i = randomizedOffset; i < randomizedOffset + 10; i++) {
+    if (potentialMatches.length > toCreate) {
+      const randomizedOffset = Math.floor(Math.random() * (potentialMatches.length - toCreate))
+      for (let i = randomizedOffset; i < randomizedOffset + toCreate; i++) {
         randomizedMatches.push(potentialMatches[i])
       }
     } else {
@@ -127,23 +148,27 @@ class MatchService {
 
   getPotentialMatches = async ({ userId }: { userId: string }) => {
     const today = new Date()
-    const todayStart = new Date(today.setUTCHours(0, 0, 0, 0))
+    const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
     const todayEnd = new Date(today.setUTCHours(23, 59, 59, 999))
 
-    const matchesCreatedToday = await this.matchModel.find({
+    // Finds potential matches by this criteria:
+    // 1. User is either userOne or userTwo
+    // 2. Overall status is not rejected
+    // 3. User's status is pending
+    const potentialMatches = await this.matchModel.find({
       $or: [
-        { userIdOne: userId },
-        { userIdTwo: userId }
+        { $and: [{ userIdOne: userId, userOneStatus: MATCH.STATUS.PENDING }] },
+        { $and: [{ userIdTwo: userId, userTwoStatus: MATCH.STATUS.PENDING }] }
       ],
       $and: [
-        { createdAt: { $gte: todayStart, $lte: todayEnd } }
+        { overallStatus: MATCH.STATUS.PENDING }
       ]
-    }).populate('userOne').populate('userTwo')
+    }).populate('userOne').populate('userTwo').limit(10)
 
-    if (matchesCreatedToday.length === 0) {
-      return this.createTodayPotentialMatches({ userId })
+    if (potentialMatches.length < 10) {
+      return [...potentialMatches, await this.createPotentialMatches({ userId, toCreate: 10 - potentialMatches.length })]
     } else {
-      return matchesCreatedToday.filter((match) => match.overallStatus === MATCH.STATUS.PENDING)
+      return potentialMatches
     }
   }
 

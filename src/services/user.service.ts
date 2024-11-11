@@ -54,6 +54,8 @@ class UserService {
       {
         ...(profile.name && { name: profile.name }),
         ...(profile.profileSummary && { profileSummary: profile.profileSummary }),
+        ...(profile.gender && { gender: profile.gender }),
+        ...(profile.matchGenderInterest && { matchGenderInterest: profile.matchGenderInterest }),
       },
       { new: true}
     ).exec()

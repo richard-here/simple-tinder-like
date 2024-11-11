@@ -3,4 +3,6 @@ export interface Profile {
   profileSummary?: string
   addInterests?: string[]
   removeInterests?: string[]
+  gender?: string
+  matchGenderInterest?: string
 }

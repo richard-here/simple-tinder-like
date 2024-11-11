@@ -13,6 +13,6 @@
     "rootDir": "./src",                 // Root directory for your source files
     "strict": true,                       // Enable strict type checking
   },
-  "include": ["src/**/*.ts"],            // Include all TypeScript files in the 'src' folder
+  "include": ["src/**/*.ts", "src/population.js"],            // Include all TypeScript files in the 'src' folder
   "exclude": ["node_modules"]            // Exclude 'node_modules' from compilation
 }

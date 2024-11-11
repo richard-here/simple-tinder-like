@@ -92,7 +92,8 @@ const USER = {
     { interest: "rollerblading", category: "social", score: 7 },
     { interest: "iceSkating", category: "social", score: 8 },
     { interest: "parkour", category: "social", score: 7 },
-  ]
+  ],
+  GENDERS: ['male', 'female']
 }
 
 export { USER }
