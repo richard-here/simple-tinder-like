@@ -20,6 +20,7 @@ const UserSchema = new Schema(
     },
     gender: { type: String, required: false, default: null },
     matchGenderInterest: { type: String, required: false, default: null },
+    subscribedUntil: { type: Date, required: false, default: null }
   },
   {
     timestamps: true,

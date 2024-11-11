@@ -150,10 +150,6 @@ class MatchService {
   }
 
   getPotentialMatches = async ({ userId }: { userId: string }) => {
-    const today = new Date()
-    const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
-    const todayEnd = new Date(today.setUTCHours(23, 59, 59, 999))
-
     // Finds potential matches by this criteria:
     // 1. User is either userOne or userTwo
     // 2. Overall status is not rejected
@@ -214,11 +210,23 @@ class MatchService {
       createdAt: { $gte: todayStart, $lte: todayEnd }
     })
 
-    if (matchLogsToday >= 10) {
+    const user = await this.userModel.findById(userId)
+    if (!user) {
+      throw new ServiceException({
+        type: 'not-found',
+        code: 'services/match/updateMatchById',
+        message: 'User not found'
+      })
+    }
+
+    const isSubscribed = user.subscribedUntil && user.subscribedUntil > new Date()
+    const swipeLimit = isSubscribed ? 20 : 10
+
+    if (matchLogsToday >= swipeLimit) {
       throw new ServiceException({
         type: 'user',
         code: 'services/match/updateMatchById',
-        message: 'User can only swipe 10 times a day'
+        message: `User can only swipe ${swipeLimit} times a day`
       })
     }
 

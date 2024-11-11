@@ -85,6 +85,36 @@ class UserService {
     const { scores, ...updatedUser } = user.toObject()
     return updatedUser
   }
+
+  markAsPaidUser = async ({ userId }: { userId: string }) => {
+    const user = await this.userModel.findById(userId)
+    if (!user) {
+      throw new ServiceException({
+        type: 'not-found',
+        code: 'services/user/markAsPaidUser',
+        message: 'User not found'
+      })
+    }
+
+    if (user.subscribedUntil && user.subscribedUntil > new Date()) {
+      throw new ServiceException({
+        type: 'user',
+        code: 'services/user/markAsPaidUser',
+        message: 'User is already a paid user'
+      })
+    }
+
+    const today = new Date()
+    today.setUTCHours(23, 59, 59, 999)
+    const subscribedUntil = new Date(today.setMonth(today.getMonth() + 1))
+    const updatedUser = await this.userModel.findByIdAndUpdate(
+      userId,
+      { subscribedUntil },
+      { new: true }
+    ).exec()
+
+    return updatedUser
+  }
 }
 
 export default UserService

@@ -11,5 +11,6 @@ const validatePathParams = validateRequest(UserValidator.pathParamsSchema, 'para
 router.get('/me', catchAsyncErrors(UserController.getMyProfile))
 router.get('/:userId', validatePathParams, catchAsyncErrors(UserController.getProfile))
 router.patch('/me', validateRequest(UserValidator.updateProfile), catchAsyncErrors(UserController.updateProfile))
+router.post('/payment', catchAsyncErrors(UserController.markAsPaidUser))
 
 export default router
